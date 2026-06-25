@@ -1,0 +1,88 @@
+/* App.css - this file ONLY controls how things look.
+   It never controls what the app DOES - that's all in App.jsx. */
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 24px;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ── Main content area ── */
+.main {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── The big type box ── */
+.type-box {
+  width: 100%;
+  min-height: 100px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-size: 17px;
+  color: var(--ink);
+  resize: none; /* stops the user from dragging to resize it */
+}
+
+/* When you click into the box, it gets a little purple glow */
+.type-box:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* ── Buttons row ── */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.speak-btn {
+  flex: 1;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius);
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.speak-btn:hover {
+  background: var(--accent-dark);
+}
+
+.clear-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  border-radius: var(--radius);
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.clear-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

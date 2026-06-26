@@ -1,13 +1,10 @@
-/* App.css - this file ONLY controls how things look.
-   It never controls what the app DOES - that's all in App.jsx. */
-
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* ── Header ── */
+/* Header */
 .header {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
@@ -20,7 +17,7 @@
   color: var(--ink);
 }
 
-/* ── Main content area ── */
+/* Main content area */
 .main {
   flex: 1;
   max-width: 600px;
@@ -32,7 +29,7 @@
   gap: 12px;
 }
 
-/* ── The big type box ── */
+/* The big type box hehe */
 .type-box {
   width: 100%;
   min-height: 100px;
@@ -42,7 +39,7 @@
   padding: 14px;
   font-size: 17px;
   color: var(--ink);
-  resize: none; /* stops the user from dragging to resize it */
+  resize: none; 
 }
 
 /* When you click into the box, it gets a little purple glow */
@@ -52,7 +49,7 @@
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-/* ── Buttons row ── */
+/* Buttons row */
 .actions {
   display: flex;
   gap: 10px;
@@ -85,4 +82,105 @@
 .clear-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.section-label {
+  font-size: 12px; 
+  font-weight: 500; 
+  color: var(--ink-3);
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  margin-bottom: 10px; 
+}
+
+.say-first-btn {
+  width: 100%; 
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 16px; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  font-size: 14px; 
+  color: var(--ink);
+  text-align: left; 
+}
+
+.say-first-btn:hover {
+  border-color: var(--accent); 
+  background: var(--accent-light);
+}
+
+.say-first-icon {
+  font-size: 16px; 
+  flex-shrink:0;
+}
+
+.category-tabs {
+  display:flex; 
+  gap: 8px; 
+  margin-bottom: 12px; 
+}
+
+.category-tab {
+  font-size: 12px; 
+  font-weight: 500; 
+  padding: 7px 15px; 
+  border-radius: 99px; 
+  border: 1px solid var(--border); 
+  background: var(--bg-card); 
+  color: var(--ink-2);
+}
+
+.category-tab--active {
+  background: var(--accent); 
+  color: white; 
+  border-color: var(--accent); 
+}
+
+.phrase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 20px; 
+}
+
+.phrase-tile {
+  display:flex;
+  align-items: stretch; 
+  background: var(--bg-card); 
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.phrase-text-btn {
+  flex: 1; 
+  background: transparent; 
+  padding: 12px 10px; 
+  font-size: 13px; 
+  font-weight: 500;
+  color: var(--accent-dark);
+  text-align: left; 
+}
+
+.phrase-text-btn:hover {
+  background: var(--accent-light);
+}
+
+.phrase-speak-btn {
+  background: var(--accent-light);
+  padding: 12px 12px; 
+  font-size: 14px; 
+  flex-shrink: 0; 
+}
+
+.phrase-speak-btn:hover {
+  background: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .phrase-grid {
+    grid-template-columns: 1fr; 
+  }
 }

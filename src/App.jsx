@@ -3,7 +3,7 @@
 
 // prisha note: tool from react (useState) that lets app remember and automatically redraw the screen
 // will remember what user types and will redraw it
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 const SAY_FIRST = "My speech is a little harder to understand right now, thanks for your patience."
@@ -29,6 +29,9 @@ const CATEGORIES = [
   { id: 'medical', label: 'Medical'},
 ]
 
+const HISTORY_STORAGE_KEY = 'thread-phrase-history'
+const MAX_HISTORY_LENGTH = 10
+
 
 //prisha note: regular helper function (not react-specific) that makes the computer talk
 // no download needed -- most modern browsers have this
@@ -45,6 +48,27 @@ function speak(text) {
     window.speechSynthesis.speak(utterance)
 }
 
+// prisha note: reads whatever history we previously saved 
+function loadHistoryFromStorage() {
+  try {
+    const saved = localStorage.getItem(HISTORY_STORAGE_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch (error) {
+    console.error('Could not load history:', error)
+    return []
+  }
+}
+
+function saveHistoryToStorage(history) {
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history))
+  } catch (error) {
+    console.error('Could not load history:', error)
+    return []
+  }
+}
+
+
 
 // prisha note: app itself 
 // prisha note: function that returns what should appear on the screen -- react will call this function and draw whatever it returns
@@ -53,6 +77,11 @@ export default function App() {
     // prisha note: setText() is the only way to change text as whenever we call setText(something), React will automatically redraw the screen to match the new value
     const [text, setText] = useState('')
     const [activeCategory, setActiveCategory] = useState('calls')
+    const [history, setHistory] = useState(() => loadHistoryFromStorage())
+
+    useEffect(() => {
+      saveHistoryToStorage(history)
+    }, [history])
     //prisha note: function runs everytime user types anytrhing (letter)
     // e is event and information about what happened -- e.target.value is whatever is currently typed
     const handleTyping = (e) => {
@@ -61,6 +90,7 @@ export default function App() {
     // prisha note: runs whenever user press speakl button 
     const handleSpeak = () => {
         speak(text)
+        addToHistory(text)
     }
     // prisha note: runs whenever user presses clear button
     const handleClear = () => {
@@ -70,6 +100,7 @@ export default function App() {
     // prisha note: when "Say this first" button is tapped, this will be immdietly spoken
     const handleSayFirst = () => {
       speak(SAY_FIRST)
+      addToHistory(SAY_FIRST)
     }
 
     // speak function for when type phrase into type box and it loads phrase into type box
@@ -80,7 +111,30 @@ export default function App() {
     // speak function for when little speaker icon is taped on a saved phrase tile
     const handleSpeakPhrase = (phraseText) => {
       speak(phraseText)
+      addToHistory(phraseText)
     }
+
+    const addToHistory = (phraseText) => {
+      if (!phraseText.trim()) return 
+      setHistory((previousHistory) => {
+        const withoutDuplicate = previousHistory.filter(
+          (item) => item !== phraseText
+        )
+        return [phraseText, ...withoutDuplicate].slice(0, MAX_HISTORY_LENGTH)
+      })
+    }
+
+    const handleSpeakRecent = (phraseText) => {
+      speak(phraseText)
+      addToHistory(phraseText)
+    }
+
+    const matchingHistorySuggestions = 
+      text.trim().length > 0
+      ? history.filter((pastPhrase) => 
+          pastPhrase.toLowerCase().includes(text.toLowerCase())
+        )
+      : []
 
     // prisha note: only shows phrases of active category
     // so will only show phrase for active category
@@ -122,6 +176,25 @@ export default function App() {
                 <span>{SAY_FIRST}</span>
               </button>
             </section>
+
+            {/* recent phrases - only show if there's at least one */}
+            {history.length > 0 && (
+              <section>
+                <h2 className="section-label">Recent</h2>
+                <div className="recent-list">
+                  {history.map((phraseText, i) => (
+                    <button
+                      key={i}
+                      className="recent-item"
+                      onClick={() => handleSpeakRecent(phraseText)}
+                    >
+                      <span className="recent-icon">🔊</span>
+                      <span className="recent-text">{phraseText}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* saved phrases with category tabs */} 
             <section> 

@@ -20,7 +20,7 @@
 /* Main content area */
 .main {
   flex: 1;
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
   padding: 24px;
@@ -235,4 +235,83 @@
   font-size: 13px; 
   flex-shrink: 0; 
   opacity: 0.6; 
+}
+
+/* Listen button */
+.listen-btn {
+  width: 100%; 
+  background: var(--bg-card);
+  border: 1.5px solid var(--accent); 
+  color: var(--accent-dark);
+  border-radius: var(--radius);
+  padding: 13px; 
+  font-size: 15px; 
+  font-weight: 500;
+  margin-bottom: 10px; 
+}
+
+.listen-btn:hover {
+  background: var(--accent-light);
+}
+
+.listen-btn:active {
+  background: var(--accent);
+  color: white; 
+  border-color: var(--accent); 
+}
+
+/* Transcript box */
+.transcript-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+ 
+.transcript-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 4px;
+}
+ 
+.transcript-text {
+  font-size: 15px;
+  color: var(--ink);
+}
+ 
+/* Reply suggestion chips */
+.reply-suggestions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+ 
+.reply-suggestion-chip {
+  background: var(--bg-card);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-dark);
+  text-align: left;
+}
+ 
+.reply-suggestion-chip:hover {
+  background: var(--accent);
+  color: white;
+}
+ 
+/* ── Loading hint ── */
+.matching-hint {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: italic;
+  margin-top: -4px;
+  margin-bottom: 8px;
 }

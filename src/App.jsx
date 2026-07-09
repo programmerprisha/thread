@@ -37,6 +37,8 @@ const CATEGORIES = [
 const HISTORY_STORAGE_KEY = 'thread-phrase-history'
 const MAX_HISTORY_LENGTH = 10
 
+// prisha note: address of backend server because i will call this instead of calling Azure directly
+const SERVER_URL = "http://localhost:3001"
 
 //prisha note: regular helper function (not react-specific) that makes the computer talk
 // no download needed -- most modern browsers have this
@@ -80,58 +82,25 @@ function saveHistoryToStorage(history) {
   // once the other person finishes talking, it will send:
   //   1. what they just said (transcript)
   //   2. her own past phrases (so AI can match her style)
-  // Azure OpenAI sends back 3 short reply suggestions.
+  // server sends back 3 short reply suggestions.
   async function askForReplySuggestions(theirTranscript, herHistory) {
-    const endpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT
-    const deployment = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT
-    const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY
-
-    // prisha note: URL Azure OpenAI 
-    const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2025-04-01-preview`
-
-    const systemPrompt = `You are helping someone who has difficulty speaking communicate quickly in conversation. Someone just said something to them. Suggest exactly 3 short, natural replies they might want to say back.
-
-  Rules:
-  - Each reply must be under 12 words.
-  - Write in the style of their own past phrases shown below, if relevant.
-  - Return ONLY a JSON array of 3 strings, nothing else. Example: ["Sure, that works", "Can we do tomorrow instead?", "Let me check and get back to you"]
-
-  Their own past phrases (for style reference):
-  ${herHistory.slice(0, 8).join('\n')}`
-
-    const response = await fetch(url, {
-      method: 'POST',
+    const response = await fetch (`${SERVER_URL}/api/reply-suggestions`, {
+      method: 'POST', 
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
+      }, 
       body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `They just said: "${theirTranscript}"` },
-        ],
-        max_completion_tokens: 150,
-        temperature: 0.7,
+        transcript: theirTranscript,
+        history: herHistory,
       }),
     })
 
     if (!response.ok) {
-    const errorBody = await response.json()
-    console.log('Azure error details:', JSON.stringify(errorBody))
-    throw new Error(`Azure OpenAI error: ${response.status}`)
+      throw new Error(`Server error: ${response.status}`)
     }
 
     const data = await response.json()
-    const rawText = data.choices[0].message.content
-
-    // prisha note: the model returns a JSON string like ["reply 1", "reply 2", "reply 3"]
-    // JSON.parse turns that string into a real JavaScript array
-    try {
-      return JSON.parse(rawText)
-    } catch (error) {
-      console.error('Could not parse AI suggestions:', rawText)
-      return []
-    }
+    return data.suggestions
   }
 
 
@@ -143,22 +112,19 @@ function saveHistoryToStorage(history) {
     const [activeCategory, setActiveCategory] = useState('calls')
     const [history, setHistory] = useState(() => loadHistoryFromStorage())
 
-    // NEW: is the mic currently on and listening to the other person?
+   // prisha note: is the mic listening or not 
     const [isListening, setIsListening] = useState(false)
 
-    // NEW: live transcript of what the OTHER person is saying
-    // this updates word by word as they talk
+    //prisha note: live transcript of what the OTHER person is saying
     const [transcript, setTranscript] = useState('')
 
-    // NEW: the 3 AI-suggested replies that appear after the other person finishes a sentence
+    // prisha note: the 3 AI-suggested replies 
     const [replySuggestions, setReplySuggestions] = useState([])
 
-    // NEW: true while we're waiting for Azure OpenAI to send back suggestions
+    // prisha note: true while we're waiting for Azure OpenAI to send back suggestions
     const [isThinking, setIsThinking] = useState(false)
 
-    // NEW: holds the actual Azure microphone "recognizer" object
-    // prisha note: we use useRef (not useState) because changing this shouldn't
-    // trigger a screen redraw - it's just a behind-the-scenes tool we hold onto
+    // prisha note: holds azure SDK recognizer object so we can stop it later
     const recognizerRef = useRef(null)
 
     useEffect(() => {
@@ -234,19 +200,30 @@ function saveHistoryToStorage(history) {
       }
     }
 
-    const startListening = () => {
-      const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY
-      const speechRegion = import.meta.env.VITE_AZURE_SPEECH_REGION
+    // prisha note: changed this now to ask server for a temporary token instead of using the real key in the browser (token expires in 10 mins)
+    
+  const startListening = async () => {
+    try {
+      // prisha note: ask OUR server for a temporary speech token
+      // the server has the real key - it gives us a short-lived token
+      const tokenResponse = await fetch(`${SERVER_URL}/api/speech-token`, {
+        method: 'POST',
+      })
 
-      // prisha note: SpeechConfig is like the settings for our microphone connection
-      // i tell it our key (password) and which Azure region to use
-      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-        speechKey,
-        speechRegion
+      if (!tokenResponse.ok) {
+        console.error('Could not get speech token from server')
+        return
+      }
+
+      const { token, region } = await tokenResponse.json()
+
+      // prisha note: now we use the token (not the real key) to set up the Azure Speech recognizer
+      const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
+        token,
+        region
       )
       speechConfig.speechRecognitionLanguage = 'en-US'
 
-      // prisha note: this tells Azure to use the computer's built-in microphone
       const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput()
 
       const recognizer = new SpeechSDK.SpeechRecognizer(
@@ -260,8 +237,8 @@ function saveHistoryToStorage(history) {
         setTranscript(event.result.text)
       }
 
-      // prisha note: "recognized" fires ONCE when they pause or finish a sentence
-      // this is the final, complete version - this is what we send to the AI
+      // prisha note: "recognized" fires ONCE when they pause/finish
+      // this is the final version - we send this to the AI
       recognizer.recognized = (sender, event) => {
         const finalText = event.result.text
         if (finalText && finalText.trim().length > 0) {
@@ -273,7 +250,12 @@ function saveHistoryToStorage(history) {
       recognizer.startContinuousRecognitionAsync()
       recognizerRef.current = recognizer
       setIsListening(true)
+
+    } catch (error) {
+      console.error('Could not start listening:', error)
     }
+  }
+    
 
     const stopListening = () => {
       if (recognizerRef.current) {

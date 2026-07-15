@@ -39,7 +39,7 @@ app.post('/api/reply-suggestions', async (req, res) => {
   const deployment = process.env.VITE_AZURE_OPENAI_DEPLOYMENT
   const apiKey = process.env.VITE_AZURE_OPENAI_KEY
 
-  const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2025-01-01-preview`
+  const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2025-04-01-preview` 
 
   const systemPrompt = `You are helping someone who has difficulty speaking communicate quickly in conversation. Someone just said something to them. Suggest exactly 3 short, natural replies they might want to say back.
 

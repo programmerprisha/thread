@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from 'react'
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
 import { supabase } from './supabase.js'
-import { Auth } from './auth.jsx'
+import Auth from './auth.jsx'
 
 import './App.css'
 

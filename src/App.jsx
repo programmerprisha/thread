@@ -9,6 +9,9 @@ import { useState, useEffect, useRef } from 'react'
 // prisha note: need Azure Speech SDK 
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
+import { supabase } from './supabase.js'
+import { Auth } from './auth.jsx'
+
 import './App.css'
 
 const SAY_FIRST = "My speech is a little harder to understand right now, thanks for your patience."
@@ -38,7 +41,7 @@ const HISTORY_STORAGE_KEY = 'thread-phrase-history'
 const MAX_HISTORY_LENGTH = 10
 
 // prisha note: address of backend server because i will call this instead of calling Azure directly
-const SERVER_URL = "http://localhost:3001"
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'
 
 //prisha note: regular helper function (not react-specific) that makes the computer talk
 // no download needed -- most modern browsers have this
@@ -127,9 +130,38 @@ function saveHistoryToStorage(history) {
     // prisha note: holds azure SDK recognizer object so we can stop it later
     const recognizerRef = useRef(null)
 
+    // prisha note: tracks who is logged in 
+    const [user, setUser] = useState(null)
+
+    // prisha note: gives right screen of sign in or sign up
+    const [authLoading, setAuthLoading] = useState(true)
+
+    // prisha note: checks for existing sesion when website loads
+    useEffect(() => {
+      // prisha note: getSesssion() checks if user is already logged in 
+      // from a previous visit -- supabase stores the session automatically
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+        setAuthLoading(false)
+      })
+
+      // prisha note: onAuthStateChange() will run whenever user logs in or logs out
+      const {data: { subscription }} = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setUser(session?.user ?? null)
+        }
+      )
+      return () => subscription.unsubscribe()
+    }, [])
+
     useEffect(() => {
       saveHistoryToStorage(history)
     }, [history])
+
+    // prisha note: signs user out
+    const handleSignOut = async () => {
+      await supabase.auth.signOut()
+    }
 
     // prisha note: function runs everytime user types anything (letter)
     // e is event and information about what happened -- e.target.value is whatever is currently typed
@@ -288,13 +320,27 @@ function saveHistoryToStorage(history) {
       addToHistory(suggestionText)
     }
 
-    // prisha note: actual jsx code -- html code which will make everything 
-    return (
-      <div className="app">
-        {/* app name at the top == job of header */} 
-        <header className="header">
-          <h1 className="logo">Thread</h1>
-        </header>
+  // prisha note: actual jsx code -- html code which will make everything 
+  // prisha note: still checking if user is logged in - show nothing
+  // this prevents a flash of the login screen on page refresh
+  if (authLoading) return null
+
+  // prisha note: no user logged in - show the login screen
+  if (!user) return <Auth />
+
+  // prisha note: user is logged in - show Thread!
+  return (
+    <div className="app">
+      <header className="header">
+        <h1 className="logo">Thread</h1>
+        {/* NEW: show user email and sign out button */}
+        <div className="header-user">
+          <span className="header-email">{user.email}</span>
+          <button className="signout-btn" onClick={handleSignOut}>
+            Sign out
+          </button>
+        </div>
+      </header>
 
         <main className="main">
 

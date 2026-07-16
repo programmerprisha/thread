@@ -139,10 +139,10 @@ app.get('/health', (req, res) => {
 })
 
 
-// prisha note: start the server!
-app.listen(PORT, () => {
-  console.log(`Thread backend running on http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Thread backend running on port ${PORT}`)
   console.log('Endpoints ready:')
+  console.log('  GET  /health')
   console.log('  POST /api/reply-suggestions')
   console.log('  POST /api/speech-token')
 })

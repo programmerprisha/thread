@@ -131,6 +131,13 @@ app.post('/api/speech-token', async (req, res) => {
   }
 })
 
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Thread backend'
+  })
+})
+
 
 // prisha note: start the server!
 app.listen(PORT, () => {

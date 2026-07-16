@@ -15,12 +15,18 @@ import express from 'express'
 import cors from 'cors'
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 // prisha note: these two lines are middleware - they run on every request before it reaches our endpoints.
 // express.json() lets us read JSON from the request body.
 // cors() allows our React frontend to call this server.
-app.use(cors())
+app.use(cors({
+  origin: [
+    'http://localhost:5173', 
+    'https://thread-lilac.vercel.app',
+  ], 
+  methods: ['GET', 'POST', 'OPTIONS'],
+}))
 app.use(express.json())
 
 
@@ -35,7 +41,7 @@ app.post('/api/reply-suggestions', async (req, res) => {
     return res.status(400).json({ error: 'transcript is required' })
   }
 
-  const endpoint = process.env.VITE_AZURE_OPENAI_ENDPOINT
+  const endpoint = process.env.VITE_AZURE_OPENAI_ENDPOINT.replace(/\/$/, '')
   const deployment = process.env.VITE_AZURE_OPENAI_DEPLOYMENT
   const apiKey = process.env.VITE_AZURE_OPENAI_KEY
 

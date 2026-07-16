@@ -1,5 +1,3 @@
-/* prisha note: file for background colors, will define each color once here through names like --bg or --accent and will use that name everywhere else */
-/* prisha note: reasoning == want to change a color, change it in one place */
 
 * , *::before, *::after {
     box-sizing: border-box; 
@@ -8,24 +6,19 @@
 }
 
 :root {
-    /* prisha note: background colors (choose warm white so more readable) */
     --bg: #F0EEE6; 
     --bg-card: #FAF8F2;
 
-    /* prisha note: text colors */
     --ink: #2A2720; 
     --ink-2: #5C5847; 
     --ink-3: #8A8674; 
 
-    /* prisha note : my pretty purple omg */
     --accent: #4A55A2; 
     --accent-light: #8389cc;
     --accent-dark: #26215C; 
 
-    /*prisha note: borders */
     --border: #E2DED2; 
 
-    /* prisha note: shapes and fonts  */
     --radius: 12px; 
     --font: 'Inter', system-ui, sans-serif;
 }

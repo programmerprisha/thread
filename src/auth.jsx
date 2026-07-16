@@ -3,16 +3,11 @@ import { supabase } from './supabase.js'
 import './auth.css'
 
 export default function Auth() {
-    // prisha note: which tab is active (signup or login)
     const[mode, setMode] = useState('signin')
-    // prisha note: user input
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    // prisha note: button loading state!
     const [loading, setLoading] = useState(false)
-    // prisha note: error message
     const [error, setError] = useState('')
-    // prisha note: success message
     const[success, setSuccess] = useState('')
 
     const handleSignIn = async (e) => {
@@ -20,8 +15,6 @@ export default function Auth() {
         setLoading(true)
         setError('')
 
-        // prisha note: sends email + password to supabase and if it matches supabase gives session token
-        // app.jsx will detect and show app automatically
         const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -37,7 +30,6 @@ export default function Auth() {
         setError('')
         setSuccess('')
 
-        // prisha note: creates new account and supabase will send a confirmation email to the user whcih they must click on
         const { error } = await supabase.auth.signUp({
             email, 
             password, 
@@ -61,7 +53,6 @@ export default function Auth() {
             <p className="auth-tagline">Communication made easier</p>
             </div>
 
-            {/* Sign in / Sign up tabs */}
             <div className="auth-tabs">
             <button
                 className={mode === 'signin' ? 'auth-tab auth-tab--active' : 'auth-tab'}

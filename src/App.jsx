@@ -1,12 +1,5 @@
-// prisha note: this is the actual app
-// describes one thing: box where we can tpye into, button speak 
-
-// prisha note: tool from react (useState, useEffect, useRef) that lets app remember and automatically redraw the screen
-// will remember what user types and will redraw it
-// useRef lets us hold onto the Azure microphone object across renders without causing re-draws
 import { useState, useEffect, useRef } from 'react'
 
-// prisha note: need Azure Speech SDK 
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
 import { supabase } from './supabase.js'
@@ -40,25 +33,16 @@ const CATEGORIES = [
 const HISTORY_STORAGE_KEY = 'thread-phrase-history'
 const MAX_HISTORY_LENGTH = 10
 
-// prisha note: address of backend server because i will call this instead of calling Azure directly
 const SERVER_URL = import.meta.env.PROD ? 'https://thread-production-cf63.up.railway.app': 'http://localhost:3001'
 
-//prisha note: regular helper function (not react-specific) that makes the computer talk
-// no download needed -- most modern browsers have this
-
 function speak(text) {
-    // prisha note: default case, if box is empty no talking required
     if (!text.trim()) return 
 
-    // SpeechSynthesisUtterance is built in "thing to be spoken"
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = 0.95
-
-    //prisha note: will speak in built in voice, may change this later if possible to user's voice
     window.speechSynthesis.speak(utterance)
 }
 
-// prisha note: reads whatever history we previously saved
 function loadHistoryFromStorage() {
   try {
     const saved = localStorage.getItem(HISTORY_STORAGE_KEY)
@@ -78,14 +62,6 @@ function saveHistoryToStorage(history) {
   }
 }
 
-
-
-
-  // prisha note: AI listener transcripter
-  // once the other person finishes talking, it will send:
-  //   1. what they just said (transcript)
-  //   2. her own past phrases (so AI can match her style)
-  // server sends back 3 short reply suggestions.
   async function askForReplySuggestions(theirTranscript, herHistory) {
     const response = await fetch (`${SERVER_URL}/api/reply-suggestions`, {
       method: 'POST', 
@@ -107,45 +83,25 @@ function saveHistoryToStorage(history) {
   }
 
 
-// prisha note: app itself 
-// prisha note: function that returns what should appear on the screen -- react will call this function and draw whatever it returns
   export default function App() {
-    // prisha note: setText() is the only way to change text as whenever we call setText(something), React will automatically redraw the screen to match the new value
     const [text, setText] = useState('')
     const [activeCategory, setActiveCategory] = useState('calls')
     const [history, setHistory] = useState(() => loadHistoryFromStorage())
 
-   // prisha note: is the mic listening or not 
     const [isListening, setIsListening] = useState(false)
-
-    //prisha note: live transcript of what the OTHER person is saying
     const [transcript, setTranscript] = useState('')
-
-    // prisha note: the 3 AI-suggested replies 
     const [replySuggestions, setReplySuggestions] = useState([])
-
-    // prisha note: true while we're waiting for Azure OpenAI to send back suggestions
     const [isThinking, setIsThinking] = useState(false)
-
-    // prisha note: holds azure SDK recognizer object so we can stop it later
     const recognizerRef = useRef(null)
-
-    // prisha note: tracks who is logged in 
     const [user, setUser] = useState(null)
-
-    // prisha note: gives right screen of sign in or sign up
     const [authLoading, setAuthLoading] = useState(true)
 
-    // prisha note: checks for existing sesion when website loads
     useEffect(() => {
-      // prisha note: getSesssion() checks if user is already logged in 
-      // from a previous visit -- supabase stores the session automatically
       supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user ?? null)
         setAuthLoading(false)
       })
 
-      // prisha note: onAuthStateChange() will run whenever user logs in or logs out
       const {data: { subscription }} = supabase.auth.onAuthStateChange(
         (event, session) => {
           setUser(session?.user ?? null)
@@ -158,38 +114,32 @@ function saveHistoryToStorage(history) {
       saveHistoryToStorage(history)
     }, [history])
 
-    // prisha note: signs user out
     const handleSignOut = async () => {
       await supabase.auth.signOut()
     }
 
-    // prisha note: function runs everytime user types anything (letter)
-    // e is event and information about what happened -- e.target.value is whatever is currently typed
     const handleTyping = (e) => {
       setText(e.target.value)
     }
-    // prisha note: runs whenever user presses speak button 
+    
     const handleSpeak = () => {
       speak(text)
       addToHistory(text)
     }
-    // prisha note: runs whenever user presses clear button
+    
     const handleClear = () => {
       setText('')
     }
 
-    // prisha note: when "Say this first" button is tapped, this will be immediately spoken
     const handleSayFirst = () => {
       speak(SAY_FIRST)
       addToHistory(SAY_FIRST)
     }
 
-    // speak function for when type phrase into type box and it loads phrase into type box
     const handleLoadPhrase = (phraseText) => {
       setText(phraseText)
     }
 
-    // speak function for when little speaker icon is taped on a saved phrase tile
     const handleSpeakPhrase = (phraseText) => {
       speak(phraseText)
       addToHistory(phraseText)
@@ -217,13 +167,10 @@ function saveHistoryToStorage(history) {
         )
       : []
 
-    // prisha note: only shows phrases of active category
     const visiblePhrases = SAVED_PHRASES.filter(
       (phrase) => phrase.category === activeCategory
     )
 
-    
-    // Listen button logic
     const handleToggleListen = () => {
       if (isListening) {
         stopListening()
@@ -231,13 +178,9 @@ function saveHistoryToStorage(history) {
         startListening()
       }
     }
-
-    // prisha note: changed this now to ask server for a temporary token instead of using the real key in the browser (token expires in 10 mins)
     
   const startListening = async () => {
     try {
-      // prisha note: ask OUR server for a temporary speech token
-      // the server has the real key - it gives us a short-lived token
       const tokenResponse = await fetch(`${SERVER_URL}/api/speech-token`, {
         method: 'POST',
       })
@@ -248,8 +191,6 @@ function saveHistoryToStorage(history) {
       }
 
       const { token, region } = await tokenResponse.json()
-
-      // prisha note: now we use the token (not the real key) to set up the Azure Speech recognizer
       const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
         token,
         region
@@ -263,14 +204,10 @@ function saveHistoryToStorage(history) {
         audioConfig
       )
 
-      // prisha note: "recognizing" fires WHILE someone is still talking
-      // gives us the live, still-changing version of the transcript
       recognizer.recognizing = (sender, event) => {
         setTranscript(event.result.text)
       }
 
-      // prisha note: "recognized" fires ONCE when they pause/finish
-      // this is the final version - we send this to the AI
       recognizer.recognized = (sender, event) => {
         const finalText = event.result.text
         if (finalText && finalText.trim().length > 0) {
@@ -297,8 +234,6 @@ function saveHistoryToStorage(history) {
       setIsListening(false)
     }
 
-    // prisha note: calls Azure OpenAI to get reply suggestions
-    // runs automatically after the other person finishes talking
     const fetchSuggestionsFor = async (theirText) => {
       setIsThinking(true)
       setReplySuggestions([])
@@ -313,27 +248,19 @@ function saveHistoryToStorage(history) {
       }
     }
 
-    // prisha note: runs when user taps one of the AI reply chips
-    // speaks it immediately and saves it to user's history
     const handleSpeakSuggestion = (suggestionText) => {
       speak(suggestionText)
       addToHistory(suggestionText)
     }
 
-  // prisha note: actual jsx code -- html code which will make everything 
-  // prisha note: still checking if user is logged in - show nothing
-  // this prevents a flash of the login screen on page refresh
   if (authLoading) return null
 
-  // prisha note: no user logged in - show the login screen
   if (!user) return <Auth />
 
-  // prisha note: user is logged in - show Thread!
   return (
     <div className="app">
       <header className="header">
         <h1 className="logo">Thread</h1>
-        {/* NEW: show user email and sign out button */}
         <div className="header-user">
           <span className="header-email">{user.email}</span>
           <button className="signout-btn" onClick={handleSignOut}>
@@ -344,7 +271,6 @@ function saveHistoryToStorage(history) {
 
         <main className="main">
 
-          {/* Listen section */}
           <section>
             <button
               className={
@@ -355,7 +281,6 @@ function saveHistoryToStorage(history) {
               {isListening ? '🔴 Listening...' : '🎙️ Listen'}
             </button>
 
-            {/* only shows when there's something transcribed */}
             {transcript && (
               <div className="transcript-box">
                 <span className="transcript-label">Transcript</span>
@@ -363,12 +288,10 @@ function saveHistoryToStorage(history) {
               </div>
             )}
 
-            {/* shows while waiting for AI */}
             {isThinking && (
               <p className="matching-hint">Thinking of replies...</p>
             )}
 
-            {/* shows the 3 reply suggestions once AI responds */}
             {!isThinking && replySuggestions.length > 0 && (
               <div className="reply-suggestions-row">
                 {replySuggestions.map((suggestion, i) => (
@@ -384,7 +307,6 @@ function saveHistoryToStorage(history) {
             )}
           </section>
 
-          {/* typebox */}
           <textarea 
             className="type-box"
             placeholder="Type what you want to say...."
@@ -392,7 +314,6 @@ function saveHistoryToStorage(history) {
             onChange={handleTyping}
           />
 
-          {/* search-as-you-type suggestions from her history */}
           {matchingHistorySuggestions.length > 0 && (
             <div className="suggestions-row">
               {matchingHistorySuggestions.map((suggestion, i) => (
@@ -407,7 +328,6 @@ function saveHistoryToStorage(history) {
             </div>
           )}
 
-          {/* buttons row */}
           <div className="actions">
             <button className="speak-btn" onClick={handleSpeak}>
               🔊 Speak
@@ -417,7 +337,6 @@ function saveHistoryToStorage(history) {
             </button>
           </div>
 
-          {/* say first button */}
           <section>
             <h2 className="section-label">Say this first</h2>
             <button className="say-first-btn" onClick={handleSayFirst}>
@@ -426,7 +345,6 @@ function saveHistoryToStorage(history) {
             </button>
           </section>
 
-          {/* recent phrases - only show if there's at least one */}
           {history.length > 0 && (
             <section>
               <h2 className="section-label">Recent</h2>
@@ -445,10 +363,8 @@ function saveHistoryToStorage(history) {
             </section>
           )}
 
-          {/* saved phrases with category tabs */} 
           <section> 
             <h2 className="section-label">Saved phrases</h2>
-            {/* category tabs row */}
             <div className="category-tabs">
               {CATEGORIES.map((cat) => (
                 <button 
@@ -465,7 +381,6 @@ function saveHistoryToStorage(history) {
               ))}
             </div>
 
-            {/* actual phrase tiles which show phrases that match currently active category */}
             <div className="phrase-grid">
               {visiblePhrases.map((phrase) => (
                 <div key={phrase.id} className="phrase-tile">
@@ -475,7 +390,6 @@ function saveHistoryToStorage(history) {
                   >
                     {phrase.text}
                   </button>
-                  {/* speaker icon speaks instantly */}
                   <button 
                     className="phrase-speak-btn"
                     onClick={() => handleSpeakPhrase(phrase.text)}

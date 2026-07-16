@@ -1,25 +1,11 @@
 
-// prisha note: server.js = Thread's backend proxy
-// prisha note: Purpose of Node.js server is to sit betweenthe React app and Azure, so our secret API keys never get exposed in the browser.
-// The React app will call this server and the server calls Azure.
-// Azure keys stay secret on the server, never in the browser yayyyy
-
-
-// prisha note: dotenv reads our .env file and makes the keys available as import.meta.env.VARIABLE_NAME in React, but in Node.js we access them as process.env.VARIABLE_NAME
 import 'dotenv/config'
-
-// prisha note: express is the framework that lets us create a server and define what happens when the frontend calls each URL
 import express from 'express'
-
-// prisha note: cors lets our React app (port 5173) talk to this server
 import cors from 'cors'
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// prisha note: these two lines are middleware - they run on every request before it reaches our endpoints.
-// express.json() lets us read JSON from the request body.
-// cors() allows our React frontend to call this server.
 app.use(cors({
   origin: [
     'http://localhost:5173', 
@@ -29,14 +15,9 @@ app.use(cors({
 }))
 app.use(express.json())
 
-
-// prisha note: number 1 is /api/reply-suggestions
-// prisha note: the user listening and replying feature
 app.post('/api/reply-suggestions', async (req, res) => {
-  // Pull the data the React app sent us
   const { transcript, history } = req.body
 
-  // Basic validation - don't call Azure if there's nothing to work with
   if (!transcript || !transcript.trim()) {
     return res.status(400).json({ error: 'transcript is required' })
   }
@@ -83,7 +64,6 @@ ${(history || []).slice(0, 8).join('\n')}`
     const data = await azureResponse.json()
     const rawText = data.choices[0].message.content
 
-    // Parse the JSON array the model returned
     try {
       const suggestions = JSON.parse(rawText)
       res.json({ suggestions })
@@ -98,10 +78,6 @@ ${(history || []).slice(0, 8).join('\n')}`
   }
 })
 
-
-// prisha note: /api/speech-token
-// prisha note: Azure Speech SDK needs a key to start listening.
-// Instead of putting the key in the browser, give the browser a temporary token that expires after 10 minutes so the real key stays on our server.
 app.post('/api/speech-token', async (req, res) => {
   const speechKey = process.env.VITE_AZURE_SPEECH_KEY
   const speechRegion = process.env.VITE_AZURE_SPEECH_REGION

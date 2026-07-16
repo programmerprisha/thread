@@ -41,7 +41,7 @@ const HISTORY_STORAGE_KEY = 'thread-phrase-history'
 const MAX_HISTORY_LENGTH = 10
 
 // prisha note: address of backend server because i will call this instead of calling Azure directly
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'
+const SERVER_URL = import.meta.env.PROD ? 'https://thread-production-cf63.up.railway.app': 'http://localhost:3001'
 
 //prisha note: regular helper function (not react-specific) that makes the computer talk
 // no download needed -- most modern browsers have this
